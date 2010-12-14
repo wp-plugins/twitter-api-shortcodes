@@ -1,0 +1,24 @@
+THEME
+
+ERROR HANDLING
+- Consider a theme for displaying errors in the place of a tweet or twitter search.  Probably allow it to be disabled.
+- Universal way to handle rate limit exceptions.
+
+SINGLE TWEET
+
+ADMIN AREA
+- Implement avatar updates using OAuth and a user list
+
+SEARCH
+- Plan for (and eventually implement) grabbing searches from google's twitter search.  Right now it isn't completely built out, but when it is we can use it, rather than caching searches.
+- jQuery pagination of searches from the shortcode.
+
+MISC
+- Figure out how to use oAuth, without giving away my secrets - http://alexking.org/blog/2010/06/10/twitter-tools-oauth-update
+
+OAUTH & PhoneHome
+- Add an explanation about why I want to phone home, what's included, and an opt in (not out)
+- Add an explanation about why I use oathgw (Googe App Engine app)
+- Add the ability for the user to supply their own twitter application key & secret if they don't wanna use oathgw
+
+BUGS

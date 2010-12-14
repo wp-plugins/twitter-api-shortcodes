@@ -1,0 +1,21 @@
+#tas_admin_panel {
+  border-bottom: 8px double black;
+  padding: 10px;
+}
+
+#tas_admin_panel .tas_admin_buttons {
+  clear: both;
+}
+
+#tas_admin_panel .tas_admin_buttons .tas_admin_button {
+  margin: 0.5em;
+}
+
+.tas_messages span{
+  float: left;
+}
+
+.twitter_auth_btn {
+  width: 151px;
+  height: 24px;
+}
