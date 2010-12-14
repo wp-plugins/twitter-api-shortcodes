@@ -3,7 +3,7 @@ Contributors: Ryan J. Geyer, Jonathan Daggerheart
 Tags: twitter, search, shortcode, api
 Requires at least: 2.9
 Tested up to: 3.0.2
-Stable tag: 0.0.1Alpha
+Stable tag: 0.0.2Alpha
 
 A plugin to add single tweets or twitter searches to your posts and pages using shortcodes
 
@@ -32,6 +32,11 @@ TODO
 3. The shortcodes rendered in a post 
 
 == Changelog ==
+= 0.0.3Alpha =
+* The "Why Authenticate" dialog can be reopened after being dismissed
+
+= 0.0.2Alpha =
+* Changes to metadata files (like this readme) and getting a feel for the Wordpress submission process
 
 = 0.0.1Alpha =
 * Initial Alpha release, seeking input from brave users
