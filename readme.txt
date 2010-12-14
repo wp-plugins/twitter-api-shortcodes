@@ -11,7 +11,18 @@ A plugin to add single tweets or twitter searches to your posts and pages using 
 Twitter API Shortcodes (TAS for short) is currently in Alpha, and should not be considered at all stable!  With that said
 please provide any feedback so we can make things better!
 
-TAS is 
+TAS allows you to put single tweets or entire twitter searches into your posts and pages using shortcodes.  The tweets and searches
+are displayed in HTML markup, so the become "part" of your site, which is good for SEO.
+
+The generated markup can be customized by putting a tweet.tpl (smarty template) file into your theme directory.  This also means that
+theme authors can support this plugin directly.
+
+All single tweets are cached in your local wordpress database, making performance ultra fast and reducing the number of requests
+necessary to the Twitter API.
+
+Twitter searches can also be cached, allowing you to keep a history of that particular search.  This is useful if you want to
+tweet about a particular event with a hash tag, then display all of your tweets for that event on a page, or in a post even
+after those tweets fall out of the twitter search index.
 
 == Installation ==
 Twitter API Shortcodes depends upon the Smarty PHP templating engine.  Since we're good little boys and girls, we won't
