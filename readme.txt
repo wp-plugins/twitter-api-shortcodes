@@ -3,7 +3,7 @@ Contributors: Ryan J. Geyer, Jonathan Daggerheart
 Tags: twitter, search, shortcode, api
 Requires at least: 2.9
 Tested up to: 3.0.2
-Stable tag: ??
+Stable tag: 0.0.1Alpha
 
 == TODO ==
 This is a list of things which currently are not yet working (hey it's an alpha version)
