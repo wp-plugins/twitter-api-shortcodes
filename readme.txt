@@ -36,7 +36,7 @@ assume that any 2.6.x version of Smarty will do.
 Once you've got the latest version, extract the zip, or tar.gz file, and copy the contents of the "libs" directory to
 /wp-content/twitter-api-shortcodes/libs/smarty/
 
-= Update 0.0.3Alpha =
+**Update 0.0.3Alpha**
 From version 0.0.3Alpha of TAS onward Smarty 3.0.x is supported too, but be sure you're running PHP5 before you try Smarty 3!
 
 == Frequently Asked Questions ==

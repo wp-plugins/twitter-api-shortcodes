@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: twitter-api-shortcodes
+Plugin Name: Twitter API Shortcodes
 Version: 0.0.3Alpha
 Plugin URI: http://tasforwp.ryangeyer.com/
 Description: A plugin to add single tweets or twitter searches to your posts and pages using shortcodes
