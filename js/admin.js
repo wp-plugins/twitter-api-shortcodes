@@ -63,6 +63,7 @@ jQuery(document).ready(function($) {
   }
 
   $('#why_authenticate').click(function() {
+    $('#tas_explain_why_authenticate').dialog('destroy');
     $('#tas_explain_why_authenticate').dialog({width: 500});
     return false;
   });

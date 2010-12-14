@@ -13,7 +13,7 @@
         <div class="tas_admin_button"><input type="submit" value="Run Cron Now" name="submit_val" /></div>
         {if $have_twitter_auth_token}
         <div class="tas_admin_button">
-        <a href="{$twitter_auth_url}" class="twitter_auth_btn"><img src="{php}echo get_bloginfo('wpurl');{/php}/wp-content/plugins/twitter-api-shortcodes/images/sign-in-with-twitter-d.png" alt="Twitter Authentication Button" /></a>
+        <a href="{$twitter_auth_url}" class="twitter_auth_btn"><img src="{$blog_url}/wp-content/plugins/twitter-api-shortcodes/images/sign-in-with-twitter-d.png" alt="Twitter Authentication Button" /></a>
         Re-authenticate with twitter (probably for debug only)
         </div>
         {/if}
@@ -40,7 +40,7 @@
             </div>
             <div id="twitter_auth_pane" class="{if !$twitter_auth}ui-helper-hidden{/if}">
               <div class="form-field{if $have_twitter_auth_token} ui-helper-hidden{/if}">
-                <a href="{$twitter_auth_url}" class="twitter_auth_btn"><img src="{php}echo get_bloginfo('wpurl');{/php}/wp-content/plugins/twitter-api-shortcodes/images/sign-in-with-twitter-d.png" alt="Twitter Authentication Button" /></a>
+                <a href="{$twitter_auth_url}" class="twitter_auth_btn"><img src="{$blog_url}/wp-content/plugins/twitter-api-shortcodes/images/sign-in-with-twitter-d.png" alt="Twitter Authentication Button" /></a>
               </div>
               <div class="form-field{if !$have_twitter_auth_token} ui-state-disabled{/if}">
                 <label for="update_avatars">Update Avatars?</label>

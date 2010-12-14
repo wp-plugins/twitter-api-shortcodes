@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: twitter-api-shortcodes
-Version: 0.0.1
+Version: 0.0.3Alpha
 Plugin URI: http://tasforwp.ryangeyer.com/
-Description: Gives the author a buncha shortcodes for displaying singular tweets, or twitter searches
+Description: A plugin to add single tweets or twitter searches to your posts and pages using shortcodes
 Author: Ryan J. Geyer
 Author URI: http://www.nslms.com
 */
@@ -11,7 +11,7 @@ Author URI: http://www.nslms.com
 require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/twitter.api.wp.class.inc.php');
 require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/smarty/Smarty.class.php');
 
-define(TAS_VERSION, '0.0.1');
+define(TAS_VERSION, '0.0.1Alpha');
 define(TAS_DB_VERSION, '0.0.3');
 define(TAS_ADMIN_OPTIONS_ID, '83a70cd3-3f32-456d-980d-309169c26ccf');
 
@@ -273,6 +273,8 @@ function tas_admin_options() {
     $search->search_term = $search->search_term;
   }
   $smarty->assign('searches', $searchesRows);
+
+  $smarty->assign('blog_url', get_bloginfo('wpurl'));
 
   /*try {
     $twitterApi = new EpiTwitter(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET);
