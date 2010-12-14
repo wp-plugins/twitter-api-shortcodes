@@ -27,7 +27,9 @@ Once you've got the latest version, extract the zip, or tar.gz file, and copy th
 TODO
 
 == Screenshots ==
-TODO
+1. TinyMCE editor integration makes it easy to add the shortcodes
+2. A post with some shortcodes in it
+3. The shortcodes rendered in a post 
 
 == Changelog ==
 
