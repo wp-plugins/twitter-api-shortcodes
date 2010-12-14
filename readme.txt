@@ -3,7 +3,7 @@ Contributors: Ryan J. Geyer, Jonathan Daggerheart
 Tags: twitter, search, shortcode, api
 Requires at least: 2.9
 Tested up to: 3.0.3
-Stable tag: 0.0.3Alpha
+Stable tag: trunk
 
 A plugin to add single tweets or twitter searches to your posts and pages using shortcodes
 
