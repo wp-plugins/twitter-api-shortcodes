@@ -10,8 +10,10 @@ Author URI: http://www.nslms.com
 
 require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/twitter.api.wp.class.inc.php');
 require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/smarty/Smarty.class.php');
+require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/functions.php');
 
-define(TAS_VERSION, '0.0.1Alpha');
+define(TAS_VERSION, '0.0.3Alpha');
 define(TAS_DB_VERSION, '0.0.3');
 define(TAS_ADMIN_OPTIONS_ID, '83a70cd3-3f32-456d-980d-309169c26ccf');
 
@@ -34,7 +36,6 @@ $tasSearchName = $wpdb->prefix . 'tas_search';
  *****************************************************************/
 
 // TODO: Need to add a schedule to update author avatar URL's on cached statuses.  Also need to add deactivation.
-
 function tas_install() {
   global $wpdb;
 
@@ -43,7 +44,6 @@ function tas_install() {
   $tasStatusSearchName = $wpdb->prefix . 'tas_status_search';
   $tasSearchName = $wpdb->prefix . 'tas_search';
 
-  require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
   update_option('tas_last_installed', date('c'));
 
   $tas_db_info = json_decode(get_option('tas_db_info'));
@@ -519,23 +519,6 @@ function cacheStatus($statusJsonObjOrStr, $searchId = 0) {
         'search_id' => $searchId
       )
     );
-  }
-}
-
-function jsonGenderBender($jsonStrOrObj, $output = 'json') {
-  $inputIs = is_string($jsonStrOrObj) ? 'string' : 'json';
-  if ($inputIs == strtolower($output)) {
-    return $jsonStrOrObj;
-  }
-
-  // Since we're returning, the break statements are redundant, but whatever.  :-)
-  switch (strtolower($output)) {
-    case 'json' :
-      return json_decode($jsonStrOrObj);
-      break;
-    case 'string' :
-      return json_encode($jsonStrOrObj);
-      break;
   }
 }
 
