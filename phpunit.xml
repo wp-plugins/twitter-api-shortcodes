@@ -1,0 +1,5 @@
+<phpunit>
+  <logging>
+    <log type="coverage-html" target="./reports" charset="UTF-8" />
+  </logging>
+</phpunit>

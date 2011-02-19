@@ -12,10 +12,10 @@ class TasForWp
 
   public static function StaticInit($wpdb)
   {
-    TasForWp::$_wpdb = $wpdb;
-    TasForWp::$StatusByIdTableName = TasForWp::$_wpdb->prefix . 'tas_status_by_id';
-    TasForWp::$StatusSearchTableName = TasForWp::$_wpdb->prefix . 'tas_status_search';
-    TasForWp::$SearchTableName = TasForWp::$_wpdb->prefix . 'tas_search';
+    TasForWp::$_wpdb                  = $wpdb;
+    TasForWp::$StatusByIdTableName    = TasForWp::$_wpdb->prefix . 'tas_status_by_id';
+    TasForWp::$StatusSearchTableName  = TasForWp::$_wpdb->prefix . 'tas_status_search';
+    TasForWp::$SearchTableName        = TasForWp::$_wpdb->prefix . 'tas_search';
   }
 
   public static function tas_install()
