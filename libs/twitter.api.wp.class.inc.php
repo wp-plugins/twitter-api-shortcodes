@@ -5,7 +5,7 @@ require_once(ABSPATH.'wp-content/plugins/twitter-api-shortcodes/libs/jmathai-twi
 
 // Support for WP 3.x
 if(!class_exists('WP_Http')) {
-  require_once(ABSPATH.WPINC.'/class-http.php');
+  require_once(ABSPATH . WPINC . '/class-http.php');
 }
 
 // TODO: This is too tightly coupled to wordpress and this application.  Should take input params for the oauthgw key

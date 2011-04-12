@@ -1,21 +1,9 @@
 <?php
-/*
-Plugin Name: Twitter API Shortcodes
-Version: 0.0.3Alpha
-Plugin URI: http://tasforwp.ryangeyer.com/
-Description: A plugin to add single tweets or twitter searches to your posts and pages using shortcodes
-Author: Ryan J. Geyer
-Author URI: http://www.nslms.com
-*/
-
-require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/twitter.api.wp.class.inc.php');
+require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/twitter.api.wp.class.inc.php');
 require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/smarty/Smarty.class.php');
-require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/functions.php');
-
-define(TAS_VERSION, '0.0.3Alpha');
-define(TAS_DB_VERSION, '0.0.3');
-define(TAS_ADMIN_OPTIONS_ID, '83a70cd3-3f32-456d-980d-309169c26ccf');
+//require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/functions.php');
+require_once(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/tasforwp.class.inc.php');
 
 // Some smarty configuration
 $smarty = new Smarty();
@@ -34,123 +22,6 @@ $tasSearchName = $wpdb->prefix . 'tas_search';
 /*****************************************************************
  * Callbacks for the Wordpress API                               *
  *****************************************************************/
-
-// TODO: Need to add a schedule to update author avatar URL's on cached statuses.  Also need to add deactivation.
-function tas_install() {
-  global $wpdb;
-
-  // This is duplicated above on the global level by necessity, if you change something here, change it there also
-  $tasStatusByIdName = $wpdb->prefix . 'tas_status_by_id';
-  $tasStatusSearchName = $wpdb->prefix . 'tas_status_search';
-  $tasSearchName = $wpdb->prefix . 'tas_search';
-
-  update_option('tas_last_installed', date('c'));
-
-  $tas_db_info = json_decode(get_option('tas_db_info'));
-
-  $tasStatusByIdSql = <<<EOF
-CREATE TABLE `%s` (
-`id` BIGINT UNSIGNED NOT NULL PRIMARY KEY ,
-`author_id` BIGINT UNSIGNED NOT NULL,
-`avatar_url` varchar(256) NOT NULL,
-`status_json` TEXT NOT NULL,
-KEY `author_id` (`author_id`)
-);
-EOF;
-
-  $tasStatusSearchSql = <<<EOF
-CREATE TABLE `%s` (
-`id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`status_id` BIGINT UNSIGNED NOT NULL ,
-`search_id` BIGINT UNSIGNED NOT NULL ,
-INDEX (  `status_id` ,  `search_id` )
-);
-EOF;
-
-  $tasSearchSql = <<<EOF
-CREATE TABLE `%s` (
-`id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-`search_term` VARCHAR( 512 ) NOT NULL,
-`archive` tinyint(1) NOT NULL,
-`last_successful_cron` BIGINT UNSIGNED NOT NULL DEFAULT 0
-);
-EOF;
-
-  if ($wpdb->get_var("show tables like '$tasStatusByIdName'") != $tasStatusByIdName ||
-    $tas_db_info->version_installed != TAS_DB_VERSION) {
-    $tas_db_info->tables[$tasStatusByIdName]->dbDelta_result = dbDelta(sprintf($tasStatusByIdSql, $tasStatusByIdName));
-  }
-
-  if ($wpdb->get_var("show tables like '$tasStatusSearchName'") != $tasStatusSearchName ||
-    $tas_db_info->version_installed != TAS_DB_VERSION) {
-    $tas_db_info->tables[$tasStatusSearchName]->dbDelta_result = dbDelta(sprintf($tasStatusSearchSql, $tasStatusSearchName));
-  }
-
-  if ($wpdb->get_var("show tables like '$tasSearchName'") != $tasSearchName ||
-    $tas_db_info->version_installed != TAS_DB_VERSION) {
-    $tas_db_info->tables[$tasSearchName]->dbDelta_result = dbDelta(sprintf($tasSearchSql, $tasSearchName));
-  }
-
-  $tas_db_info->db_version = TAS_DB_VERSION;
-
-  update_option('tas_db_info', json_encode($tas_db_info));
-  wp_schedule_event(time() - 60000, 'hourly', 'tas_cron_action');
-}
-
-function tas_uninstall() {
-  wp_clear_scheduled_hook('tas_cron_action');
-  // TODO: Should we delete our tables?
-}
-
-function tas_cron() {
-  global $smarty, $wpdb, $tasSearchName, $tasStatusSearchName;
-
-  // Just for now let's disable cron on nslms.com
-  //return;
-
-  // TODO: We need to be very conscious of the 150 call limit on the twitter API  
-  foreach ($wpdb->get_results("SELECT * FROM `$tasSearchName`") as $search) {
-    if ($search->archive) {
-      $nextPage = null;
-
-      $latestStatusIdCached = $wpdb->get_var("SELECT max(status_id) FROM `$tasStatusSearchName` WHERE search_id = $search->id");
-
-      do {
-        $params = array();
-        if ($nextPage != null) {
-          // Add all of the existing params, plus the page number 
-          foreach (explode('&', $nextPage) as $keyValuePair) {
-            $splodedPair = explode('=', $keyValuePair);
-            $params[$splodedPair[0]] = urldecode($splodedPair[1]);
-          }
-        } else {
-          $params = array('q' => $search->search_term, 'rpp' => 100);
-        }
-        $response = TwitterAPIWrapper::search($params);
-
-        foreach ($response->results as $status) {
-          if (strval($status->id) != $latestStatusIdCached) {
-            cacheStatus($status, $search->id);
-          } else {
-            $nextPage = null;
-            break 2;
-          }
-        }
-
-        $nextPage = str_replace('?', '', $response->next_page);
-      } while ($nextPage != null);
-
-      $wpdb->update($tasSearchName, array('last_successful_cron' => time()), array('id' => $search->id));
-    }
-  }
-
-  // TODO: Implement the avatar updates.
-  if(get_option('tas_twitter_auth') && have_twitter_oauth_token() && get_option('tas_update_avatars')) {
-    //
-  }
-
-  update_option('tas_last_cron', time());
-}
 
 function tas_admin_menu() {
   // I don't see any real documentation for this method call, I'm following a tutorial found at;
@@ -232,7 +103,7 @@ function tas_admin_options() {
             sprintf('A list of authors of tweets cached by @tasforwp at %s', get_bloginfo('wpurl')));
           update_option('tas_twitter_author_list_id', $createListResponse->id);
 
-          $addKhanToListResponse = TwitterAPIWrapper::addAuthorToList($createListResponse->id, 28218649);*/          
+          $addKhanToListResponse = TwitterAPIWrapper::addAuthorToList($createListResponse->id, 28218649);*/
         }
         break;
       case 'Run Cron Now':
@@ -299,7 +170,7 @@ function tas_wp_head() {
   // or simply ignore ours if a non standard template is used.
   $format = <<<EOF
 <style type="text/css" media="screen">
-  @import url("%s/wp-content/plugins/twitter-api-shortcodes/css/twitter-api-shortcodes.css");  
+  @import url("%s/wp-content/plugins/twitter-api-shortcodes/css/twitter-api-shortcodes.css");
 </style>
 EOF;
   printf($format, get_bloginfo('wpurl'));
@@ -434,34 +305,7 @@ function tas_mce_buttons($buttons) {
  * Some utility functions                                        *
  *****************************************************************/
 
-/**
- * This takes in a json object of a status which came from either the search api or the status api and makes it
- * all standardized to the format returned by the status api.  Namely the search API doesn't include the user
- * data, and it's "source" property is html encoded.  Since it takes the json object in by reference, if you pass
- * your object in by reference you can ignore the return value.
- * @param  $jsonObj The status json object to normalize
- * @return The normalized json object
- */
-function normalizeStatus(&$jsonObj) {
-  // See the documentation about the return value for the search API at;
-  // http://apiwiki.twitter.com/Twitter-Search-API-Method:-search
-  // If the user data isn't available, we'll make another call to go grab it!
-  if (!isset($jsonObj->user)) {
-    /* Getting the user for each one using another call is a HUGE waste, lets try a better way.
-    $twitterApi = new TwitterAPIWP;
-    $jsonObj->user = jsonGenderBender($twitterApi->usersShow(array('screen_name' => $jsonObj->from_user)));*/
 
-    $jsonObj->user = new stdClass();
-    $jsonObj->user->id = $jsonObj->from_user_id;
-    $jsonObj->user->screen_name = $jsonObj->from_user;
-    $jsonObj->user->profile_image_url = $jsonObj->profile_image_url;
-  }
-
-  // Again, only the search option returns an html encoded source, so we take care of that here.
-  $jsonObj->source = htmlspecialchars_decode($jsonObj->source);
-
-  return $jsonObj;
-}
 
 function formatStatus($jsonObjOrString) {
   global $smarty;
@@ -471,11 +315,11 @@ function formatStatus($jsonObjOrString) {
 
   $smarty->assign('tweet', $jsonObj);
 
-  $tweetTemplate = ABSPATH.'wp-content/plugins/twitter-api-shortcodes/templates/tweet.tpl';  
+  $tweetTemplate = ABSPATH.'wp-content/plugins/twitter-api-shortcodes/templates/tweet.tpl';
   $templateDir = get_template_directory();
   $curTemplateTweet = $templateDir.'/tweet.tpl';
   if(file_exists($curTemplateTweet)) {
-    $tweetTemplate = $curTemplateTweet; 
+    $tweetTemplate = $curTemplateTweet;
   }
 
   return $smarty->fetch($tweetTemplate);
@@ -522,27 +366,19 @@ function cacheStatus($statusJsonObjOrStr, $searchId = 0) {
   }
 }
 
-function have_twitter_oauth_token() {
-  $tas_oauth_gw_key = get_option('tas_oauth_gw_key', false);
-  $tas_twitter_oauth_token = get_option('tas_twitter_oauth_token', false);
-
-  $have_twitter_auth_token = $tas_oauth_gw_key != '' | $tas_twitter_oauth_token != '';
-  return $have_twitter_auth_token;
-}
-
 /*****************************************************************
  * Registration of all of the callbacks                          *
  *****************************************************************/
 
-register_activation_hook(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/twitter-api-shortcodes.php',
-  'tas_install');
-register_deactivation_hook(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/twitter-api-shortcodes.php',
-  'tas_uninstall');
-add_shortcode('twitter_status_by_id', 'twitter_status_by_id_func');
+register_activation_hook(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/tasforwp.class.inc.php',
+  TasForWp::$install_hook);
+register_deactivation_hook(ABSPATH . 'wp-content/plugins/twitter-api-shortcodes/libs/tasforwp.class.inc.php',
+  TasForWp::$uninstall_hook);
+/*add_shortcode('twitter_status_by_id', 'twitter_status_by_id_func');
 add_shortcode('twitter_search', 'twitter_search_func');
 add_action('wp_head', 'tas_wp_head');
 add_action('admin_print_scripts', 'tas_admin_print_scripts');
 add_action('admin_head', 'tas_admin_head');
 add_action('admin_menu', 'tas_admin_menu');
 add_action('tas_cron_action', 'tas_cron');
-add_action('init', 'tas_add_tinymce_buttons_action');
+add_action('init', 'tas_add_tinymce_buttons_action');*/

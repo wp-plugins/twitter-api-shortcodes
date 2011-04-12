@@ -1,4 +1,4 @@
-<phpunit>
+<phpunit bootstrap="wordpress-tests/wp-test.php">
   <logging>
     <log type="coverage-html" target="./reports" charset="UTF-8" />
   </logging>
