@@ -36,7 +36,7 @@ EOF;
   }
 
   public function testStatusNormalizer() {
-    $searchJson = file_get_contents(PROJECT_ROOT.'/tests/fixtures/one-search-result.json');
+    $searchJson = file_get_contents(DIR_TESTDATA.'/twitter-api-shortcodes/one-search-result.json');
 
     $getJson = <<<EOF
 
