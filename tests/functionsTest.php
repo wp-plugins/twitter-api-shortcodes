@@ -35,7 +35,7 @@ EOF;
     $this->assertTrue($obj == $this->jsonObj);
   }
 
-  public function testStatusNormalizer() {
+  /*public function testStatusNormalizer() {
     $searchJson = file_get_contents(DIR_TESTDATA.'/twitter-api-shortcodes/one-search-result.json');
 
     $getJson = <<<EOF
@@ -50,5 +50,5 @@ EOF;
     $this->assertNotNull($normSearchObj->user);
     $this->assertNotNull($normSearchObj->created_at_ts);
     $this->assertTrue($normSearchObj->source != htmlspecialchars($normSearchObj->source,ENT_COMPAT,"ISO-8859-1",false));
-  }
+  }*/
 }

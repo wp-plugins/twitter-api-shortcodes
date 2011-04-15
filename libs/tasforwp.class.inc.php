@@ -1,8 +1,4 @@
 <?php
-define(TAS_VERSION, '0.0.3Alpha');
-define(TAS_DB_VERSION, '0.0.3');
-define(TAS_ADMIN_OPTIONS_ID, '83a70cd3-3f32-456d-980d-309169c26ccf');
-
 class TasForWp
 {
   private static $_instance;
@@ -28,21 +24,23 @@ class TasForWp
   public static $uninstall_hook           = "TasForWP::tas_uninstall";
   public static $cron_hook                = "TasForWP::tas_cron_action";
   public static $admin_menu_hook          = "TasForWp::tas_admin_menu";
-  public static $wp_head_hook             = "TasForWp::tas_wp_head";
+  public static $wp_print_styles_hook     = "TasForWp::tas_wp_print_styles";
   public static $admin_print_scripts_hook = "TasForWp::tas_admin_print_scripts";
-  public static $admin_head_hook          = "TasForWp::tas_admin_head";
+  public static $admin_print_styles_hook  = "TasForWp::tas_admin_print_styles";
+  public static $status_by_id_shortcode   = "TasForWp::twitter_status_by_id_func";
+  public static $search_shortcode         = "TasForWp::twitter_search_func";
   public static $options                  = array(
     "tas_last_installed", "tas_db_info", "tas_last_cron", "tas_twitter_auth", "tas_update_avatars"
   );
 
-  public function init($wpdb)
+  public function init($wpdb, $tapi=null)
   {
     $this->_wpdb                      = $wpdb;
     TasForWp::$StatusByIdTableName    = $this->_wpdb->prefix . 'tas_status_by_id';
     TasForWp::$StatusSearchTableName  = $this->_wpdb->prefix . 'tas_status_search';
     TasForWp::$SearchTableName        = $this->_wpdb->prefix . 'tas_search';
 
-    $this->tapi                   = new TwitterAPIWrapper();
+    $this->tapi                   = isset($tapi) ? $tapi : new TwitterAPIWrapper();
 
     $this->smarty                 = new Smarty();
     $this->smarty->template_dir   = ABSPATH.'wp-content/plugins/twitter-api-shortcodes/templates/';
@@ -51,52 +49,68 @@ class TasForWp
     $this->smarty->cache_dir      = ABSPATH.'wp-content/plugins/twitter-api-shortcodes/templates/cache/';
   }
 
-  public static function tas_admin_head()
+  public static function tas_admin_print_styles()
   {
-    self::getInstance()->tas_admin_head_impl();
+    self::getInstance()->tas_admin_print_styles_impl();
   }
 
-  private function tas_admin_head_impl() {
+  private function tas_admin_print_styles_impl() {
     // Note: I'm gobsmacked that Wordpress includes the jQuery js files, but no theme.  For now, we're including the
     // theme CSS files for the "smoothness" theme, cause it fits the best.  Wierd though!
     if ($_REQUEST['page'] == TAS_ADMIN_OPTIONS_ID) {
-      $format = <<<EOF
-  <script type="text/javascript" src="%s/wp-content/plugins/twitter-api-shortcodes/js/admin.js"></script>
-  <style type="text/css" media="screen">
-    @import url("%s/wp-content/plugins/twitter-api-shortcodes/css/jqueryui/smoothness/jquery-ui-1.8.4.custom.css");
-    @import url("%s/wp-content/plugins/twitter-api-shortcodes/css/twitter-api-shortcodes-admin.css");
-  </style>
-EOF;
+      // jQuery Styles
+      $jqUrl = WP_PLUGIN_URL . '/twitter-api-shortcodes/css/jqueryui/smoothness/jquery-ui-1.8.4.custom.css';
+      $jqFile = WP_PLUGIN_DIR . '/twitter-api-shortcodes/css/jqueryui/smoothness/jquery-ui-1.8.4.custom.css';
+      if(file_exists($jqFile)) {
+        wp_register_style('tas_admin_jquery_styles', $jqUrl);
+        wp_enqueue_style('tas_admin_jquery_styles');
+      }
 
-      printf($format, get_bloginfo('wpurl'), get_bloginfo('wpurl'), get_bloginfo('wpurl'));
+      // Admin Styles
+      $admUrl = WP_PLUGIN_URL . '/twitter-api-shortcodes/css/twitter-api-shortcodes-admin.css';
+      $admFile = WP_PLUGIN_DIR . '/twitter-api-shortcodes/css/twitter-api-shortcodes-admin.css';
+      if(file_exists($admFile)) {
+        wp_register_style('tas_admin_styles', $admUrl);
+        wp_enqueue_style('tas_admin_styles');
+      }
     }
   }
 
   public static function tas_admin_print_scripts()
   {
-    self::getInstance()->tas_admin_print_scripts();
+    self::getInstance()->tas_admin_print_scripts_impl();
   }
 
   private function tas_admin_print_scripts_impl() {
-    wp_enqueue_script('jquery');
-    wp_enqueue_script('jquery-ui-core');
-    wp_enqueue_script('jquery-ui-dialog');
+    if ($_REQUEST['page'] == TAS_ADMIN_OPTIONS_ID) {
+      wp_enqueue_script('jquery');
+      wp_enqueue_script('jquery-ui-core');
+      wp_enqueue_script('jquery-ui-dialog');
+
+      $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/js/admin.js';
+      $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/js/admin.js';
+      if(file_exists($file)) {
+        wp_register_script('tas_admin_script', $url);
+        wp_enqueue_script('tas_admin_script');
+      }
+    }
   }
 
-  public static function tas_wp_head()
+  public static function tas_wp_print_styles()
   {
-    self::getInstance()->tas_wp_head_impl();
+    self::getInstance()->tas_wp_print_styles_impl();
   }
 
-  private function tas_wp_head_impl() {
+  private function tas_wp_print_styles_impl() {
     // TODO: We're dynamically loading the template, but not the CSS, need to look for an alternative css here as well,
     // or simply ignore ours if a non standard template is used.
-    $format = <<<EOF
-  <style type="text/css" media="screen">
-    @import url("%s/wp-content/plugins/twitter-api-shortcodes/css/twitter-api-shortcodes.css");
-  </style>
-EOF;
-    printf($format, get_bloginfo('wpurl'));
+    // Tweet Styles
+    $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
+    $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
+    if(file_exists($file)) {
+      wp_register_style('tas_styles', $url);
+      wp_enqueue_style('tas_styles');
+    }
   }
 
   // TODO: Need to add a schedule to update author avatar URL's on cached statuses.  Also need to add deactivation.
@@ -177,40 +191,8 @@ EOF;
 
   private function tas_cron_impl() {
     // TODO: We need to be very conscious of the 150 call limit on the twitter API
-    foreach ($this->_wpdb->get_results("SELECT * FROM `". TasForWp::$SearchTableName ."`") as $search) {
-      if ($search->archive) {
-        $nextPage = null;
-
-        $latestStatusIdCached = $this->_wpdb->get_var("SELECT max(status_id) FROM `".TasForWp::$StatusByIdTableName."` WHERE search_id = $search->id");
-
-        do {
-          $params = array();
-          if ($nextPage != null) {
-            // Add all of the existing params, plus the page number
-            foreach (explode('&', $nextPage) as $keyValuePair) {
-              $splodedPair = explode('=', $keyValuePair);
-              $params[$splodedPair[0]] = urldecode($splodedPair[1]);
-            }
-          } else {
-            // TODO: Should/can we specify a larger rpp?
-            $params = array('q' => $search->search_term, 'rpp' => 100);
-          }
-          $response = $this->tapi->search($params);
-
-          foreach ($response->results as $status) {
-            if (strval($status->id) != $latestStatusIdCached) {
-              $this->cacheStatus($status, $search->id);
-            } else {
-              $nextPage = null;
-              break 2;
-            }
-          }
-
-          $nextPage = str_replace('?', '', $response->next_page);
-        } while ($nextPage != null);
-
-        $this->_wpdb->update(TasForWp::$SearchTableName, array('last_successful_cron' => time()), array('id' => $search->id));
-      }
+    foreach (TwitterSearch::getSearches($this->_wpdb, $this->tapi) as $search) {
+      $search->fetchAndCacheLatest();
     }
 
     // TODO: Implement the avatar updates.
@@ -242,7 +224,7 @@ EOF;
 
       switch ($_REQUEST['submit_val']) {
         case 'Add':
-          $result = TasForWp::add_search($_REQUEST['terms'], $_REQUEST['archive']);
+          $result = $this->add_search($_REQUEST['terms'], $_REQUEST['archive']);
           if (!is_wp_error($result)) {
             unset($_REQUEST);
           }
@@ -264,12 +246,12 @@ EOF;
             $action = $_REQUEST['search-action'] == -1 ? $_REQUEST['search-action2'] : $_REQUEST['search-action'];
             switch ($action) {
               case 'archive':
-                $sql = $this->_wpdb->prepare(
+                $sql = sprintf(
                   "UPDATE `".TasForWp::$SearchTableName."` SET archive = 1 WHERE id IN (%s)", implode(',', $_REQUEST['search']));
                 $this->_wpdb->query($sql);
                 break;
               case 'dearchive':
-                $sql = $this->_wpdb->prepare(
+                $sql = sprintf(
                   "UPDATE `".TasForWp::$SearchTableName."` SET archive = 0 WHERE id IN (%s)", implode(',', $_REQUEST['search']));
                 $this->_wpdb->query($sql);
                 break;
@@ -302,7 +284,7 @@ EOF;
           }
           break;
         case 'Run Cron Now':
-          tas_cron();
+          $this->tas_cron_impl();
           break;
         default:
           break;
@@ -312,7 +294,7 @@ EOF;
     // Grab the stuff to complete the form..
     $this->smarty->assign('twitter_auth', get_option('tas_twitter_auth', false));
 
-    $this->smarty->assign('have_twitter_auth_token', TasForWp::have_twitter_oauth_token());
+    $this->smarty->assign('have_twitter_auth_token', $this->have_twitter_oauth_token());
 
     $lastInstalled = get_option('tas_last_installed');
     $this->smarty->assign('last_installed', $lastInstalled);
@@ -355,7 +337,7 @@ EOF;
       print_r($e);
     }*/
 
-    $this->smarty->assign('twitter_auth_url', TwitterAPIWrapper::getAuthUri($nonce));
+    $this->smarty->assign('twitter_auth_url', $this->tapi->getAuthUri($nonce));
 
     print $this->smarty->fetch('admin-options.tpl');
   }
@@ -364,7 +346,110 @@ EOF;
     // I don't see any real documentation for this method call, I'm following a tutorial found at;
     // http://codex.wordpress.org/Adding_Administration_Menus
     // This does seem to follow the model of add_menu_page and add_submenu_page as far as parameters though
-    add_options_page('Twitter API Shortcode Options', 'Twitter API Shortcodes', 'manage_options', TAS_ADMIN_OPTIONS_ID, 'TasForWP::tas_admin_options');
+    add_options_page('Twitter API Shortcode Options', 'Twitter API Shortcodes', 'manage_options', TAS_ADMIN_OPTIONS_ID, 'TasForWp::tas_admin_options');
+  }
+
+  public static function twitter_status_by_id_func($atts)
+  {
+    return self::getInstance()->twitter_status_by_id_func_impl($atts);
+  }
+
+  private function twitter_status_by_id_func_impl($atts) {
+    // Initialize extracted vals from shortcode so that the IDE doesn't complain
+    $id = '';
+    extract(
+      shortcode_atts(
+        array(
+          'id' => 0
+        ),
+        $atts
+      )
+    );
+
+    // TODO: Right now we're just bailing out on any validation errors, or on any failures.
+    // Probably need to notify the user, or the admin somehow?
+
+    // Validations
+    if (!$id) {
+      return;
+    }
+
+    $status = new TwitterStatus($this->_wpdb, $this->tapi);
+    $status->get_by_id($id);
+
+    return $this->formatStatus($status);
+
+    /*$existingRecordQuery = sprintf('SELECT * FROM %s WHERE id = %s', TasForWp::$StatusByIdTableName, $id);
+    $existingRecord = $this->_wpdb->get_row($existingRecordQuery);
+
+    if (!$existingRecord) {
+      $response = $this->tapi->getStatuses($id);
+
+      $status = $response;
+      $this->cacheStatus($response);
+    } else {
+      $status = json_decode($existingRecord->status_json);
+      // TODO: Should I be doing this magic maybe in the formatStatus method?
+      $status->user->profile_image_url = $existingRecord->avatar_url;
+    }
+
+    return $this->formatStatus($status);*/
+  }
+
+  public static function twitter_search_func($atts)
+  {
+    return self::getInstance()->twitter_search_func_impl($atts);
+  }
+
+  private function twitter_search_func_impl($atts) {
+    // Initialize extracted vals from shortcode so that the IDE doesn't complain
+    $id = '';
+    $limit = 0;
+    $paging = false;
+    extract(
+      shortcode_atts(
+        array(
+          'id'      => 0,
+          'limit'   => 0,
+          'paging'  => false
+        ),
+        $atts
+      )
+    );
+
+    // Little bit of validation
+    if (!$id) {
+      return;
+    }
+
+    $search = new TwitterSearch($id, $this->_wpdb, $this->tapi);
+    $search->limit = $limit;
+    $search->paging = $paging;
+    $output = $this->formatSearch($search);
+
+    return $output;
+  }
+
+  public static function tas_add_tinymce_buttons($plugin_array) {
+    $plugin_array['tas'] = WP_PLUGIN_URL . '/twitter-api-shortcodes/tinymce_plugin/editor_plugin.js';
+    return $plugin_array;
+  }
+
+  public static function tas_add_tinymce_buttons_action() {
+    // Don't bother doing this stuff if the current user lacks permissions
+    if (!current_user_can('edit_posts') && !current_user_can('edit_pages'))
+      return;
+
+    // Add only in Rich Editor mode
+    if (get_user_option('rich_editing') == 'true') {
+      add_filter("mce_external_plugins", "TasForWp::tas_add_tinymce_buttons");
+      add_filter('mce_buttons', 'TasForWp::tas_mce_buttons');
+    }
+  }
+
+  public static function tas_mce_buttons($buttons) {
+    array_push($buttons, '|', 'tas');
+    return $buttons;
   }
 
   private function add_search($term, $archive) {
@@ -377,7 +462,6 @@ EOF;
     );
   }
 
-  // TODO: This should be private, but I have to test it externally... Hrrmn
   private function have_twitter_oauth_token() {
     $tas_oauth_gw_key = get_option('tas_oauth_gw_key', '');
     $tas_twitter_oauth_token = get_option('tas_twitter_oauth_token', '');
@@ -386,32 +470,31 @@ EOF;
     return (boolean)$have_twitter_auth_token;
   }
 
-  private function cacheStatus($statusJsonObjOrStr, $searchId = 0) {
-    // Bail if we're not getting anything
-    if(!$statusJsonObjOrStr) { return; }
+  private function formatStatus(TwitterStatus $status) {
+    $this->smarty->assign('tweet', $status);
 
-    $statusObj = jsonGenderBender($statusJsonObjOrStr);
-    $statusStr = jsonGenderBender($statusJsonObjOrStr, 'string');
-
-    normalizeStatus(&$statusObj);
-
-    // TODO: Assume that we are always getting new ones, or check here?
-    $this->_wpdb->insert(TasForWp::$StatusByIdTableName,
-      array(
-        'id' => strval($statusObj->id_str),
-        'author_id' => $statusObj->user->id,
-        'avatar_url' => $statusObj->user->profile_image_url,
-        'status_json' => $statusStr
-      )
-    );
-
-    if ($searchId > 0) {
-      $this->_wpdb->insert(TasForWp::$StatusSearchTableName,
-        array(
-          'status_id' => $statusObj->id,
-          'search_id' => $searchId
-        )
-      );
+    $tweetTemplate = WP_PLUGIN_DIR.'/twitter-api-shortcodes/templates/tweet.tpl';
+    $curTemplateTweet = TEMPLATEPATH.'/tweet.tpl';
+    if(file_exists($curTemplateTweet)) {
+      $tweetTemplate = $curTemplateTweet;
     }
+
+    return $this->smarty->fetch($tweetTemplate);
   }
-}
+
+  public function formatSearch(TwitterSearch $search)
+  {
+    $retVal = '<div class="tweet-list">';
+    $statuses = $search->getStatuses();
+    if (is_array($statuses)) {
+      foreach ($statuses as $status) {
+        $retVal .= $this->formatStatus($status);
+      }
+    }
+    if($search->paging) {
+      $retVal .= "<a href='#'>Next Page</a>";
+    }
+    $retVal .= '</div>';
+    return $retVal;
+  }
+} TasForWp::getInstance();

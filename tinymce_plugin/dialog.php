@@ -6,6 +6,7 @@ $wp_header = implode('/', array_diff(explode('/', $scriptFile), array_slice(expl
 
 define('WP_USE_THEMES', false);
 require_once($wp_header.'/wp-blog-header.php');
+TasForWp::getInstance();
 ?>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
@@ -24,7 +25,14 @@ var tasInsertDialog = {
     mySubmit : function ($searchOrStatus) {
       var insertVal = '[';
       if($searchOrStatus == 'search') {
-        insertVal += 'twitter_search id="' + document.tas_input_form.search_id.value +'"]';
+        insertVal += 'twitter_search id=' + document.tas_input_form.search_id.value;
+        if(document.tas_input_form.list_limit.value != '') {
+          insertVal += ' limit=' + document.tas_input_form.list_limit.value;
+        }
+        if(document.tas_input_form.page_search.checked) {
+          insertVal += ' paging=true';
+        }
+        insertVal += ']';
       } else {
         insertVal += 'twitter_status_by_id id="' + document.tas_input_form.status_id.value +'"]';
       }
@@ -51,15 +59,24 @@ tinyMCEPopup.onInit.add(tasInsertDialog.init, tasInsertDialog);
       <input type="text" id="status_id" name="status_id" />
     </div>
     <input type="submit" value="Add Status" name="submit" onclick="tasInsertDialog.mySubmit('status');" class="button" style="margin: 5px;"/>
+    <hr/>
     <div class="form-field">
       <label for="search_id">Predefined Search:</label>
       <select name="search_id" id="search_id">
     <?php
-    foreach($wpdb->get_results("SELECT * FROM `$tasSearchName`") as $search) {
+    foreach($wpdb->get_results("SELECT * FROM `".TasForWp::$SearchTableName."`") as $search) {
       print "    <option value='$search->id'>".rawurldecode($search->search_term)."</option>\n";
     }
     ?>
       </select>
+    </div>
+    <div class="form-field">
+      <label for="list_limit">Max Tweets</label>
+      <input type="text" id="list_limit" name="list_limit" />
+    </div>
+    <div class="form-field">
+      <label for="page_search">Allow Paging?</label>
+      <input type="checkbox" id="page_search" name="page_search" />
     </div>
     <input type="submit" value="Add Search" name="submit" onclick="tasInsertDialog.mySubmit('search');" class="button" style="margin: 5px;"/>
   </form>

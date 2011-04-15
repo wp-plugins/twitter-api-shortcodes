@@ -12,7 +12,7 @@
     <div class="meta entry-meta">
       On
       <a class="entry-date" rel="bookmark" href="http://twitter.com/{$tweet->user->screen_name}/status/{$tweet->id_str}" target="_blank">
-        <span class="published timestamp">{$tweet->created_at}</span>
+        <span class="published timestamp">{$tweet->created_at_wp}</span>
       </a>
       via {$tweet->source}
     </div>
