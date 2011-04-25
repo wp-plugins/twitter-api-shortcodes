@@ -3,6 +3,9 @@ require_once(ABSPATH.'wp-content/plugins/twitter-api-shortcodes/libs/jmathai-twi
 require_once(ABSPATH.'wp-content/plugins/twitter-api-shortcodes/libs/jmathai-twitter-async/EpiOAuth.php');
 require_once(ABSPATH.'wp-content/plugins/twitter-api-shortcodes/libs/jmathai-twitter-async/EpiTwitter.php');
 
+
+//require_once(ABSPATH.'wp-content/plugins/twitter-api-shortcodes/libs/twitteroauth/twitteroauth/twitteroauth.php');
+
 // Support for WP 3.x
 if(!class_exists('WP_Http')) {
   require_once(ABSPATH . WPINC . '/class-http.php');
@@ -34,11 +37,20 @@ class TwitterAPIWrapper {
    * Un authenticated methods
    ******************************************************************************************/
 
+  /**
+   * http://apiwiki.twitter.com/Twitter-Search-API-Method:-search
+   * @param  $paramAry
+   * @return bool
+   */
   public function search($paramAry) {
-    $twitterApi = new EpiTwitter();
-    $response = $twitterApi->get_search($paramAry);
-
-    return $response;
+    // TODO: Maybe we ought to make this a public class var, so we can override it in tests.
+    $wp_http = new WP_Http();
+    $request = 'http://search.twitter.com/search.json?';
+    foreach($paramAry as $idx => $param) {
+      $request .= $idx.'='.urlencode($param).'&';
+    }
+    $response = $wp_http->request($request);
+    return $this->_requestFailed($response) ? false : json_decode($response['body']);
   }
 
   /******************************************************************************************
@@ -90,13 +102,27 @@ class TwitterAPIWrapper {
       array('method' => 'POST', 'body' => array('authorId' => $authorId, 'listId' => $listId, 'key' => get_option('tas_oauth_gw_key')))
     );
   }
+
+  /******************************************************************************************
+   * Private helpers
+   ******************************************************************************************/
+
+  private function _requestFailed($wpErrorOrResponse) {
+    $retVal = (is_wp_error($wpErrorOrResponse)||
+      !$wpErrorOrResponse ||
+      !$wpErrorOrResponse['response'] ||
+      !$wpErrorOrResponse['response']['code'] ||
+      $wpErrorOrResponse['response']['code'] != 200);
+    if(!$retVal) {
+      unset($this->last_error);
+      $this->last_error->response = $wpErrorOrResponse['response'];
+      if(is_wp_error($wpErrorOrResponse)) { $this->last_error->wp_error = $wpErrorOrResponse; }
+    }
+    return $retVal;
+  }
 }
 
-//// Support for WP 3.x
-//if(!class_exists('WP_Http')) {
-//  require_once(ABSPATH.WPINC.'/class-http.php');
-//}
-//
+
 //// TODO: Still need to add error handling into this!
 //class TwitterAPIWP {
 //  private $wp_http;
@@ -108,19 +134,6 @@ class TwitterAPIWrapper {
 //    $this->format = $format;
 //  }
 //
-//  private function _requestFailed($wpErrorOrResponse) {
-//    $retVal = (is_wp_error($wpErrorOrResponse)||
-//      !$wpErrorOrResponse ||
-//      !$wpErrorOrResponse['response'] ||
-//      !$wpErrorOrResponse['response']['code'] ||
-//      $wpErrorOrResponse['response']['code'] != 200);
-//    if(!$retVal) {
-//      unset($this->last_error);
-//      $this->last_error->response = $wpErrorOrResponse['response'];
-//      if(is_wp_error($wpErrorOrResponse)) { $this->last_error->wp_error = $wpErrorOrResponse; }
-//    }
-//    return $retVal;
-//  }
 //
 //  /**
 //   * http://apiwiki.twitter.com/Twitter-REST-API-Method:-statuses%C2%A0show
@@ -131,19 +144,6 @@ class TwitterAPIWrapper {
 //    return $this->_requestFailed($response) ? false : $response['body'];
 //  }
 //
-//  /**
-//   * http://apiwiki.twitter.com/Twitter-Search-API-Method:-search
-//   * @param  $paramAry
-//   * @return bool
-//   */
-//  public function search($paramAry) {
-//    $request = 'http://search.twitter.com/search.json?';
-//    foreach($paramAry as $idx => $param) {
-//      $request .= $idx.'='.$param.'&';
-//    }
-//    $response = $this->wp_http->request($request);
-//    return $this->_requestFailed($response) ? false : $response['body'];
-//  }
 //
 //  /**
 //   * http://apiwiki.twitter.com/Twitter-REST-API-Method:-users%C2%A0show

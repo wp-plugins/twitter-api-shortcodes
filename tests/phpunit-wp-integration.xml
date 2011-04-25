@@ -1,0 +1,17 @@
+<phpunit backupGlobals="false" backupStaticAttributes="false" colors="true">
+
+  <filter>
+    <blacklist>
+      <directory>/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk/templates</directory>
+      <directory>/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk/wordpress-tests/</directory>
+      <directory>/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk/libs/smarty/</directory>
+      <directory>/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk/libs/jmathai-twitter-async/</directory>
+    </blacklist>
+  </filter>
+
+  <testsuites>
+    <testsuite name="wp-integration">
+      <directory>/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk/tests/wp-integration/</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

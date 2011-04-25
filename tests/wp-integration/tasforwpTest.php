@@ -1,5 +1,6 @@
 <?php
-class TasForWPUnitTests extends WPTestCase {
+class TasForWPTest extends WPTestCase {
+//class TasForWPTest extends PHPUnit_Framework_TestCase {
   public static function print_wp_die($message)
   {
     print $message;
@@ -7,7 +8,7 @@ class TasForWPUnitTests extends WPTestCase {
 
   public static function print_wp_die_hook($function)
   {
-    return "TasForWPUnitTests::print_wp_die";
+    return "TasForWPTest::print_wp_die";
   }
 
   private function create_admin_and_login()
@@ -240,14 +241,14 @@ class TasForWPUnitTests extends WPTestCase {
   function test_tas_admin_options_denied_without_manage_options()
   {
     wp_set_current_user(0);
-    add_filter('wp_die_handler', array('TasForWPUnitTests','print_wp_die_hook'));
+    add_filter('wp_die_handler', array('TasForWPTest','print_wp_die_hook'));
     ob_start();
     TasForWp::tas_admin_options();
     $result = ob_get_contents();
     ob_end_clean();
     $constraint = $this->stringContains('You know what you did wrong naughty boy! Go to your room!');
     $this->assertThat($result, $constraint, $result);
-    remove_filter('wp_die_handler', array('TasForWPUnitTests','print_wp_die_hook'));
+    remove_filter('wp_die_handler', array('TasForWPTest','print_wp_die_hook'));
   }
 
   function test_tas_admin_options_no_action_without_nonce()

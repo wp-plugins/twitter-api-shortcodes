@@ -1,0 +1,11 @@
+<phpunit bootstrap="bootstrap.php" backupGlobals="false" backupStaticAttributes="false" colors="true">
+  <logging>
+    <log type="coverage-clover" target="./test-output/unit-clover.xml"/>
+    <log type="junit" target="./test-output/unit-junit.xml" />
+  </logging>
+  <testsuites>
+    <testsuite name="unit">
+      <directory>unit</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>

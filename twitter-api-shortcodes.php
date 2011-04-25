@@ -41,6 +41,7 @@ register_deactivation_hook(WP_PLUGIN_DIR . '/twitter-api-shortcodes/libs/tasforw
 add_action('tas_cron_action', TasForWp::$cron_hook);
 add_action('admin_menu', TasForWp::$admin_menu_hook);
 add_action('wp_print_styles', TasForWp::$wp_print_styles_hook);
+add_action('wp_print_scripts', TasForWp::$wp_print_scripts_hook);
 add_action('admin_print_scripts', TasForWp::$admin_print_scripts_hook);
 add_action('admin_print_styles', TasForWp::$admin_print_styles_hook);
 
@@ -48,3 +49,6 @@ add_shortcode('twitter_status_by_id', TasForWp::$status_by_id_shortcode);
 add_shortcode('twitter_search', TasForWp::$search_shortcode);
 
 add_action('init', 'TasForWp::tas_add_tinymce_buttons_action');
+
+add_action('wp_ajax_nopriv_tas_search', TasForWp::$search_ajax_hook);
+add_action('wp_ajax_tas_search', TasForWp::$search_ajax_hook);

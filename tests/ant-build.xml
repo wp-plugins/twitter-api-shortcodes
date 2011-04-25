@@ -1,0 +1,23 @@
+<project name="TasForWPTests" default="test-all" basedir=".">
+<!--  <delete dir="./test-output" />
+  <delete dir="./reports" />
+
+  <mkdir dir="./test-output"/>
+  <mkdir dir="./reports"/>-->
+
+  <target name="test-all">
+    <!--<exec dir="${basedir}/../wordpress-tests/" executable="/Applications/XAMPP/xamppfiles/bin/php">
+      <arg line="wp-test.php -n -v 3.1.1 -c ${basedir}/phpunit-wp-integration.xml" />
+    </exec>-->
+    <!--<exec dir="${basedir}" executable="/Applications/XAMPP/xamppfiles/bin/phpunit">
+      <arg line="-c ${basedir}/phpunit.xml" />
+    </exec>-->
+
+    <junitreport todir="./reports">
+      <fileset dir="./test-output">
+        <include name="*junit.xml" />
+      </fileset>
+      <report format="frames" todir="./reports/html" />
+    </junitreport>
+  </target>
+</project>

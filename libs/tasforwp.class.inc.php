@@ -25,8 +25,11 @@ class TasForWp
   public static $cron_hook                = "TasForWP::tas_cron_action";
   public static $admin_menu_hook          = "TasForWp::tas_admin_menu";
   public static $wp_print_styles_hook     = "TasForWp::tas_wp_print_styles";
+  public static $wp_print_scripts_hook    = "TasForWp::tas_wp_print_scripts";
   public static $admin_print_scripts_hook = "TasForWp::tas_admin_print_scripts";
   public static $admin_print_styles_hook  = "TasForWp::tas_admin_print_styles";
+  public static $search_ajax_hook         = "TasForWp::tas_search_ajax";
+
   public static $status_by_id_shortcode   = "TasForWp::twitter_status_by_id_func";
   public static $search_shortcode         = "TasForWp::twitter_search_func";
   public static $options                  = array(
@@ -110,6 +113,25 @@ class TasForWp
     if(file_exists($file)) {
       wp_register_style('tas_styles', $url);
       wp_enqueue_style('tas_styles');
+    }
+  }
+
+  public static function tas_wp_print_scripts()
+  {
+    self::getInstance()->tas_wp_print_scripts_impl();
+  }
+
+  private function tas_wp_print_scripts_impl() {
+    // TODO: We're dynamically loading the template, but not the CSS, need to look for an alternative css here as well,
+    // or simply ignore ours if a non standard template is used.
+    // Tweet Styles
+    $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/js/tas-search.js';
+    $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/js/tas-search.js';
+    if(file_exists($file)) {
+      wp_register_script('tas_search_script', $url);
+      wp_enqueue_script('tas_search_script');
+
+      wp_localize_script('tas_search_script', 'tas_search_script', array('ajaxurl' => admin_url('admin-ajax.php')));
     }
   }
 
@@ -201,6 +223,47 @@ EOF;
     }
 
     update_option('tas_last_cron', time());
+  }
+
+  public static function tas_search_ajax()
+  {
+    self::getInstance()->tas_search_ajax_impl();
+  }
+
+  private function tas_search_ajax_impl()
+  {
+    // TODO: There's some work to be done here, mostly making the TwitterSearch class better.
+    $infoObj = (object)$_REQUEST['info_str'];
+
+    $search = new TwitterSearch($infoObj->id, $this->_wpdb, null);
+    $search->page = $infoObj->page == 'null' ? null : $infoObj->page;
+    $search->max_status_id = $infoObj->max_status_id == 'null' ? null : $infoObj->max_status_id;
+    $search->limit = $infoObj->limit;
+    $search->paging = $infoObj->paging;
+
+    $returnObject = new stdClass();
+    $returnObject->statuses = '';
+
+    $statusAry = $search->getStatuses();
+
+    foreach($statusAry as $status)
+    {
+      $returnObject->statuses .= $this->formatStatus($status);
+    }
+
+    $infoObj->max_status_id = $statusAry[0]->id_str;
+    if(!isset($search->page)) { $infoObj->page = 1; }
+
+    if($search->older_statuses_available()) {
+      $returnObject->next_link = $this->searchNextButton();
+    }
+    if(!$search->archive) {
+      $returnObject->refresh_link = $this->searchRefreshButton();
+    }
+    $returnObject->info_obj = $infoObj;
+
+    print strval(jsonGenderBender($returnObject, 'string'));
+    exit;
   }
 
   public static function tas_admin_options()
@@ -484,17 +547,44 @@ EOF;
 
   public function formatSearch(TwitterSearch $search)
   {
-    $retVal = '<div class="tweet-list">';
+    $thisDivGuid = sprintf("tas_search_%s", uniqid());
+    $retVal = sprintf('<div class="tweet-list" id="%s">', $thisDivGuid);
     $statuses = $search->getStatuses();
+    $max_status_id = $statuses[0]->id_str;
     if (is_array($statuses)) {
       foreach ($statuses as $status) {
         $retVal .= $this->formatStatus($status);
       }
     }
     if($search->paging) {
-      $retVal .= "<a href='#'>Next Page</a>";
+      $dataObj = new stdClass();
+      $dataObj->id = $search->getId();
+      $dataObj->max_status_id = $max_status_id;
+      $dataObj->limit = $search->limit;
+      $dataObj->div_guid = $thisDivGuid;
+      $dataObj->paging = $search->paging;
+      $dataJson = jsonGenderBender($dataObj, 'string');
+      if($search->older_statuses_available())
+      {
+        //$retVal .= "<a href='' class='tas_search_next' data='" . $dataJson ."'>Older Tweets</a>";
+        $retVal .= $this->searchNextButton($dataJson);
+      }
+      if(!$search->archive)
+      {
+        $retVal .= $this->searchRefreshButton($dataJson);
+      }
     }
     $retVal .= '</div>';
     return $retVal;
+  }
+
+  private function searchNextButton($dataJson=null)
+  {
+    return sprintf("<input type='button' class='tas_search_next' data='%s' value='Older Tweets'/>", $dataJson);
+  }
+
+  private function searchRefreshButton($dataJson=null)
+  {
+    return sprintf("<input type='button' class='tas_search_refresh' data='%s' value='Refresh Search' />", $dataJson);
   }
 } TasForWp::getInstance();
