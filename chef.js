@@ -1,7 +1,7 @@
 {
   "wordpress_tests": {
     "plugin_name": "twitter-api-shortcodes",
-    "project_path": "/Users/rgeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk",
+    "project_path": "/Users/ryangeyer/Code/PHP/Wordpress/mine/tasforwp-svn/twitter-api-shortcodes/trunk",
     "project_wptests_path": "tests",
     "dbname": "tasforwp-test",
     "dbuser": "root"

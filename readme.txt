@@ -17,6 +17,8 @@ are displayed in HTML markup, so the become "part" of your site, which is good f
 The generated markup can be customized by putting a tweet.tpl (smarty template) file into your theme directory.  This also means that
 theme authors can support this plugin directly.
 
+Tweet templates assume that each tweet is in some block with the class 'status' (preferably a div like so <div class="status">), and that in that block, there is a block for images with the class 'images' (preferably a div like so <div class="images">) 
+
 All single tweets are cached in your local wordpress database, making performance ultra fast and reducing the number of requests
 necessary to the Twitter API.
 

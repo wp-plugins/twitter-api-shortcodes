@@ -25,3 +25,8 @@
 
 .status div.status-body {
 }
+
+.status .images img {
+	max-width: 128px;
+  max-height: 128px;
+}

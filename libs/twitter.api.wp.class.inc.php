@@ -60,8 +60,7 @@ class TwitterAPIWrapper {
   public function getStatuses($id) {
     $twitterApi = new EpiTwitter();
     try {
-      $method = "get_statusesShow{$id}";
-      $response = $twitterApi->$method();
+      $response = $twitterApi->get("/statuses/show/{$id}.json", array('include_entities' => 1));
     } catch (/*EpiTwitterForbidden*/Exception $ex) {
       if (get_option('tas_twitter_auth', false) && get_option('tas_use_auth', false)) {
         // We're just gonna assume this is an auth error.

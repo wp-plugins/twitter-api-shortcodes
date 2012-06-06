@@ -12,11 +12,14 @@ ADMIN AREA
 SEARCH
 - Plan for (and eventually implement) grabbing searches from google's twitter search.  Right now it isn't completely built out, but when it is we can use it, rather than caching searches.
 - Block by twitter ID
+- Allow auto updates w/ js, posting back results from users browsers to the tasforwp cache
+- Allow a toggle for images, and an "image only" template and mode
 
 MISC
 - Figure out how to use oAuth, without giving away my secrets - http://alexking.org/blog/2010/06/10/twitter-tools-oauth-update
 - Delete tweets manually
 - Export to list
+- Show images by grabbing include_entities, fetching the extended url, and grabbing the ob:image metadata
 
 OAUTH & PhoneHome
 - Add an explanation about why I want to phone home, what's included, and an opt in (not out)

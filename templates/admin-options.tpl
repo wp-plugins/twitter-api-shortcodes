@@ -88,7 +88,7 @@
                 <th scope="row" class="check-column"><input type="checkbox" name="search[]" value="{$search->id}" /></th>
                 <td class="tas_search_term">{$search->search_term}</td>
                 <td class="tas_search_archive" value="{$search->archive}">{if $search->archive}{$search->archivedStatuses}{else}Not Archived{/if}</td>
-                <td>[twitter-search id="{$search->id}"]</td>
+                <td>[twitter_search id={$search->id}]</td>
                 <td><a href="" class="tas_search_edit_btn">Edit</a> <a href="" class="tas_search_delete_btn">Delete</a></td>
               </tr>
   {/foreach}

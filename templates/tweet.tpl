@@ -1,4 +1,4 @@
-<div class="status">
+<div class="status" data='{json_encode($tweet->data)}'>
   <div class="author">
     <a href="http://twitter.com/{$tweet->user->screen_name}" target="_blank">
       <img alt="{$tweet->user->screen_name}" height="48" src="{$tweet->user->profile_image_url}" width="48">
@@ -16,5 +16,10 @@
       </a>
       via {$tweet->source}
     </div>
+  </div>
+  <div class="images">
+    {foreach $tweet->images as $image}
+    {include file="tweet-image.tpl" image=$image}
+    {/foreach}
   </div>
 </div>

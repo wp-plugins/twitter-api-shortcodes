@@ -56,6 +56,7 @@ class TasForWPTest extends WPTestCase {
   }
 
   function test_tas_install() {
+  	global $wpdb;
     TasForWp::tas_install();
     $option_db_version = json_decode(get_option('tas_db_info'))->db_version;
     $this->assertTrue($option_db_version == TAS_DB_VERSION,
@@ -64,6 +65,7 @@ class TasForWPTest extends WPTestCase {
       sprintf("TAS Cron not scheduled wp_get_schedule == %s", wp_get_schedule(TasForWp::$cron_hook)));
     $this->assertTrue(time() - get_option('tas_last_installed') < 30,
       sprintf("tas_last_installed option is more than 30 seconds in the past - %s", get_option('tas_last_installed')));
+    $this->assertTrue($wpdb->get_var("show tables like '" . TasForWp::$StatusByIdTableName . "'") == TasForWp::$StatusByIdTableName);
   }
 
   function test_cron_sets_option() {

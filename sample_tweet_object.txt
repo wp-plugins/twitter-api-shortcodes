@@ -1,0 +1,96 @@
+stdClass Object
+(
+    [created_at] => Fri, 01 Jun 2012 18:53:30 +0000
+    [entities] => stdClass Object
+        (
+            [hashtags] => Array
+                (
+                )
+
+            [urls] => Array
+                (
+                )
+
+            [user_mentions] => Array
+                (
+                    [0] => stdClass Object
+                        (
+                            [screen_name] => Xoxo_chocC
+                            [name] => Carriell Banks
+                            [id] => 456214282
+                            [id_str] => 456214282
+                            [indices] => Array
+                                (
+                                    [0] => 25
+                                    [1] => 36
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [from_user] => Perfectly_C
+    [from_user_id] => 85725949
+    [from_user_id_str] => 85725949
+    [from_user_name] => Perfectly_C™
+    [geo] => 
+    [id] => 2.08632380519E+17
+    [id_str] => 208632380519493632
+    [iso_language_code] => en
+    [metadata] => stdClass Object
+        (
+            [result_type] => recent
+        )
+
+    [profile_image_url] => http://a0.twimg.com/profile_images/2223651751/Perfectly_C_normal.jpg
+    [profile_image_url_https] => https://si0.twimg.com/profile_images/2223651751/Perfectly_C_normal.jpg
+    [source] => <a href="http://levelupstudio.com/plume" rel="nofollow">Plume for Android</a>
+    [text] => Where's my pic hoe ?! . «@Xoxo_chocC ill be sleep da whole way to lima»
+    [to_user] => 
+    [to_user_id] => 0
+    [to_user_id_str] => 0
+    [to_user_name] => 
+    [data] => stdClass Object
+        (
+            [entities] => stdClass Object
+                (
+                    [hashtags] => Array
+                        (
+                        )
+
+                    [urls] => Array
+                        (
+                        )
+
+                    [user_mentions] => Array
+                        (
+                            [0] => stdClass Object
+                                (
+                                    [screen_name] => Xoxo_chocC
+                                    [name] => Carriell Banks
+                                    [id] => 456214282
+                                    [id_str] => 456214282
+                                    [indices] => Array
+                                        (
+                                            [0] => 25
+                                            [1] => 36
+                                        )
+
+                                )
+
+                        )
+
+                )
+
+        )
+
+    [user] => stdClass Object
+        (
+            [id] => 85725949
+            [screen_name] => Perfectly_C
+            [profile_image_url] => http://a0.twimg.com/profile_images/2223651751/Perfectly_C_normal.jpg
+        )
+
+)

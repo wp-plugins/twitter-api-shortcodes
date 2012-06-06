@@ -33,8 +33,10 @@ require_once(WP_PLUGIN_DIR . '/twitter-api-shortcodes/libs/twitter.search.class.
  * Registration of all of the callbacks                          *
  *****************************************************************/
 
-register_activation_hook(WP_PLUGIN_DIR . '/twitter-api-shortcodes/libs/tasforwp.class.inc.php',
-  TasForWp::$install_hook);
+// Just do the installation check on every call, cause the activation hook is NOT working
+add_action('init', TasForWp::$install_hook, 1);
+
+// Not sure this works?
 register_deactivation_hook(WP_PLUGIN_DIR . '/twitter-api-shortcodes/libs/tasforwp.class.inc.php',
   TasForWp::$uninstall_hook);
 
@@ -50,5 +52,24 @@ add_shortcode('twitter_search', TasForWp::$search_shortcode);
 
 add_action('init', 'TasForWp::tas_add_tinymce_buttons_action');
 
+# Search ajax callbacks, the _nopriv is for anonymous users, the other is for logged in users
 add_action('wp_ajax_nopriv_tas_search', TasForWp::$search_ajax_hook);
 add_action('wp_ajax_tas_search', TasForWp::$search_ajax_hook);
+
+# Image page URL to image URL ajax callbacks, the _nopriv is for anonymous users, the other is for logged in users
+add_action('wp_ajax_nopriv_tas_url_to_image', TasForWp::$tas_url_to_image_hook);
+add_action('wp_ajax_tas_url_to_image', TasForWp::$tas_url_to_image_hook);
+
+# Convert twitter search json into html markup (caching also happens if enabled), the _nopriv is for anonymous users, the other is for logged in users
+add_action('wp_ajax_nopriv_tas_search_to_markup', TasForWp::$tas_search_to_markup_hook);
+add_action('wp_ajax_tas_search_to_markup', TasForWp::$tas_search_to_markup_hook);
+
+/*****************************************************************
+ * Uncomment this line to enable logging at
+ * /wp-content/plugins/twitter-api-shortcodes/log.log
+ * 
+ * Make sure the file exists and is writable by apache
+ * 
+ * You can shut it back off later by setting 'true' to 'false'
+ *****************************************************************/
+#update_option('tas_log', true);

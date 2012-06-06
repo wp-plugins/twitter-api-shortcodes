@@ -14,6 +14,7 @@ class TwitterSearch {
   private $_id = 0;
 
   private $_nextPage = null;
+  private $_refresh_url = null;
 
   public function getId()
   {
@@ -40,7 +41,7 @@ class TwitterSearch {
         $latestStatusIdCached = $this->getMaxStatusId();
 
         do {
-          $params = array();
+          $params = array('include_entities' => 1);
           if ($nextPage != null) {
             // Add all of the existing params, plus the page number
             foreach (explode('&', $nextPage) as $keyValuePair) {
@@ -49,7 +50,7 @@ class TwitterSearch {
             }
           } else {
             // TODO: Should/can we specify a larger rpp?
-            $params = array('q' => $this->term, 'rpp' => 100);
+            $params = array_merge($params, array('q' => $this->term, 'rpp' => 100));
             if(isset($latestStatusIdCached)) $params['since_id'] = $latestStatusIdCached;
           }
           try {
@@ -61,6 +62,7 @@ class TwitterSearch {
           foreach ($response->results as $status) {
             $status_obj = new TwitterStatus($this->_wpdb, $this->tapi);
             $status_obj->load_json($status);
+            $status_obj->process_entities();
             $status_obj->cacheToDb();
 
             $this->_wpdb->insert(TasForWp::$StatusSearchTableName,
@@ -107,11 +109,12 @@ class TwitterSearch {
       foreach ($rows as $row) {
         $status_obj = new TwitterStatus($row->id);
         $status_obj->load_json($row->status_json);
+        #$status_obj->process_entities();
         $this->_statuses[] = $status_obj;
       }
     } else {
       try {
-        $params = array('q' => $this->term);
+        $params = array('q' => $this->term, 'include_entities' => 1);
         if($this->limit > 0) {
           $params['rpp'] = $this->limit;
         }
@@ -124,11 +127,13 @@ class TwitterSearch {
         $response = $this->tapi->search($params);
 
         $this->_nextPage = $response->next_page;
+        $this->_refresh_url = $response->refresh_url;        
 
         foreach($response->results as $result)
         {
           $status_obj = new TwitterStatus($this->_wpdb, $this->tapi);
           $status_obj->load_json($result);
+          #$status_obj->process_entities();
           $this->_statuses[] = $status_obj;
         }
       } catch (Exception $e) {
@@ -144,6 +149,14 @@ class TwitterSearch {
       $this->fetchStatuses();
     }
     return $this->_statuses;
+  }
+  
+  public function getNextPageUrl() {
+  	return $this->_nextPage;  
+  }
+  
+  public function getRefreshUrl() {
+  	return $this->_refresh_url;
   }
 
   private function getMaxStatusId()

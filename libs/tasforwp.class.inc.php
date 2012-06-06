@@ -1,8 +1,34 @@
 <?php
+
+/*  CREATE TABLE `tas_status_by_id` (
+  `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY ,
+  `author_id` BIGINT UNSIGNED NOT NULL,
+  `avatar_url` varchar(256) NOT NULL,
+  `status_json` TEXT NOT NULL,
+  KEY `author_id` (`author_id`)
+  );
+
+  CREATE TABLE `tas_status_search` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `status_id` BIGINT UNSIGNED NOT NULL ,
+  `search_id` BIGINT UNSIGNED NOT NULL ,
+  INDEX (  `status_id` ,  `search_id` )
+  );
+
+  CREATE TABLE `tas_search` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `search_term` VARCHAR( 512 ) NOT NULL,
+  `archive` tinyint(1) NOT NULL,
+  `last_successful_cron` BIGINT UNSIGNED NOT NULL DEFAULT 0
+  );*/
+
+
 class TasForWp
 {
   private static $_instance;
-  private function __construct() {}
+  private function __construct() {
+  	register_activation_hook( __FILE__, array(  &$this, 'tas_install_impl' ) );
+  }
 
   public static function getInstance() {
     global $wpdb;
@@ -20,15 +46,17 @@ class TasForWp
   public static $StatusSearchTableName;
   public static $SearchTableName;
 
-  public static $install_hook             = "TasForWP::tas_install";
-  public static $uninstall_hook           = "TasForWP::tas_uninstall";
-  public static $cron_hook                = "TasForWP::tas_cron_action";
-  public static $admin_menu_hook          = "TasForWp::tas_admin_menu";
-  public static $wp_print_styles_hook     = "TasForWp::tas_wp_print_styles";
-  public static $wp_print_scripts_hook    = "TasForWp::tas_wp_print_scripts";
-  public static $admin_print_scripts_hook = "TasForWp::tas_admin_print_scripts";
-  public static $admin_print_styles_hook  = "TasForWp::tas_admin_print_styles";
-  public static $search_ajax_hook         = "TasForWp::tas_search_ajax";
+  public static $install_hook             	= "TasForWp::tas_install";
+  public static $uninstall_hook           	= "TasForWp::tas_uninstall";
+  public static $cron_hook                	= "TasForWp::tas_cron_action";
+  public static $admin_menu_hook          	= "TasForWp::tas_admin_menu";
+  public static $wp_print_styles_hook     	= "TasForWp::tas_wp_print_styles";
+  public static $wp_print_scripts_hook    	= "TasForWp::tas_wp_print_scripts";
+  public static $admin_print_scripts_hook 	= "TasForWp::tas_admin_print_scripts";
+  public static $admin_print_styles_hook  	= "TasForWp::tas_admin_print_styles";
+  public static $search_ajax_hook         	= "TasForWp::tas_search_ajax";
+  public static $tas_url_to_image_hook			= "TasForWp::tas_url_to_image";
+  public static $tas_search_to_markup_hook	= "TasForWp::tas_search_to_markup";
 
   public static $status_by_id_shortcode   = "TasForWp::twitter_status_by_id_func";
   public static $search_shortcode         = "TasForWp::twitter_search_func";
@@ -108,10 +136,21 @@ class TasForWp
     // TODO: We're dynamically loading the template, but not the CSS, need to look for an alternative css here as well,
     // or simply ignore ours if a non standard template is used.
     // Tweet Styles
-    $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
-    $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
-    if(file_exists($file)) {
-      wp_register_style('tas_styles', $url);
+    $defaultCssFile = WP_PLUGIN_DIR . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
+    $defaultCssUri = WP_PLUGIN_URL . '/twitter-api-shortcodes/css/twitter-api-shortcodes.css';
+    $curTemplateCssFile = TEMPLATEPATH.'/twitter-api-shortcodes.css';
+    $curTemplateCssUri = get_stylesheet_directory_uri().'/twitter-api-shortcodes.css';
+    
+    $chosenCssUri = null;
+    
+    if(file_exists($curTemplateCssFile)) {
+    	$chosenCssUri = $curTemplateCssUri;
+    } else if (file_exists($defaultCssFile)) {
+    	$chosenCssUri = $defaultCssUri;
+    }
+    
+    if($chosenCssUri) {
+      wp_register_style('tas_styles', $chosenCssUri);
       wp_enqueue_style('tas_styles');
     }
   }
@@ -122,16 +161,24 @@ class TasForWp
   }
 
   private function tas_wp_print_scripts_impl() {
-    // TODO: We're dynamically loading the template, but not the CSS, need to look for an alternative css here as well,
-    // or simply ignore ours if a non standard template is used.
-    // Tweet Styles
+  	wp_enqueue_script('jquery');
+  	
     $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/js/tas-search.js';
     $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/js/tas-search.js';
-    if(file_exists($file)) {
+    if(file_exists($file)) {   	
+    	
       wp_register_script('tas_search_script', $url);
       wp_enqueue_script('tas_search_script');
 
       wp_localize_script('tas_search_script', 'tas_search_script', array('ajaxurl' => admin_url('admin-ajax.php')));
+    }
+  	
+    $url = WP_PLUGIN_URL . '/twitter-api-shortcodes/js/jquery.xdomainajax.js';
+    $file = WP_PLUGIN_DIR . '/twitter-api-shortcodes/js/jquery.xdomainajax.js';
+    if(file_exists($file)) {   	
+    	
+      wp_register_script('tas_xdomainajax', $url);
+      wp_enqueue_script('tas_xdomainajax');
     }
   }
 
@@ -143,11 +190,13 @@ class TasForWp
 
   private function tas_install_impl()
   {
-    update_option('tas_last_installed', time());
-
-    $tas_db_info = json_decode(get_option('tas_db_info'));
-
-    $tasStatusByIdSql = <<<EOF
+  	$tas_db_info = json_decode(get_option('tas_db_info'));
+  	
+  	if($tas_db_info->version_installed != TAS_DB_VERSION) {  		  	
+	  	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+	    update_option('tas_last_installed', time());
+	
+	    $tasStatusByIdSql = <<<EOF
 CREATE TABLE `%s` (
 `id` BIGINT UNSIGNED NOT NULL PRIMARY KEY ,
 `author_id` BIGINT UNSIGNED NOT NULL,
@@ -156,8 +205,8 @@ CREATE TABLE `%s` (
 KEY `author_id` (`author_id`)
 );
 EOF;
-
-    $tasStatusSearchSql = <<<EOF
+	
+	    $tasStatusSearchSql = <<<EOF
 CREATE TABLE `%s` (
 `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 `status_id` BIGINT UNSIGNED NOT NULL ,
@@ -165,8 +214,8 @@ CREATE TABLE `%s` (
 INDEX (  `status_id` ,  `search_id` )
 );
 EOF;
-
-    $tasSearchSql = <<<EOF
+	
+	    $tasSearchSql = <<<EOF
 CREATE TABLE `%s` (
 `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
 `search_term` VARCHAR( 512 ) NOT NULL,
@@ -174,26 +223,26 @@ CREATE TABLE `%s` (
 `last_successful_cron` BIGINT UNSIGNED NOT NULL DEFAULT 0
 );
 EOF;
-
-    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$StatusByIdTableName . "'") != TasForWp::$StatusByIdTableName ||
-        $tas_db_info->version_installed != TAS_DB_VERSION) {
-      $tas_db_info->tables[TasForWp::$StatusByIdTableName]->dbDelta_result = dbDelta(sprintf($tasStatusByIdSql, TasForWp::$StatusByIdTableName));
-    }
-
-    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$StatusSearchTableName . "'") != TasForWp::$StatusSearchTableName ||
-        $tas_db_info->version_installed != TAS_DB_VERSION) {
-      $tas_db_info->tables[TasForWp::$StatusSearchTableName]->dbDelta_result = dbDelta(sprintf($tasStatusSearchSql, TasForWp::$StatusSearchTableName));
-    }
-
-    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$SearchTableName . "'") != TasForWp::$SearchTableName ||
-        $tas_db_info->version_installed != TAS_DB_VERSION) {
-      $tas_db_info->tables[TasForWp::$SearchTableName]->dbDelta_result = dbDelta(sprintf($tasSearchSql, TasForWp::$SearchTableName));
-    }
-
-    $tas_db_info->db_version = TAS_DB_VERSION;
-
-    update_option('tas_db_info', json_encode($tas_db_info));
-    wp_schedule_event(time() - 60000, 'hourly', TasForWp::$cron_hook);
+	
+	    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$StatusByIdTableName . "'") != TasForWp::$StatusByIdTableName ||
+	        $tas_db_info->version_installed != TAS_DB_VERSION) {
+	      dbDelta(sprintf($tasStatusByIdSql, TasForWp::$StatusByIdTableName));
+	    }
+	
+	    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$StatusSearchTableName . "'") != TasForWp::$StatusSearchTableName ||
+	        $tas_db_info->version_installed != TAS_DB_VERSION) {
+	      dbDelta(sprintf($tasStatusSearchSql, TasForWp::$StatusSearchTableName));
+	    }
+	
+	    if ($this->_wpdb->get_var("show tables like '" . TasForWp::$SearchTableName . "'") != TasForWp::$SearchTableName ||
+	        $tas_db_info->version_installed != TAS_DB_VERSION) {
+	      dbDelta(sprintf($tasSearchSql, TasForWp::$SearchTableName));
+	    }
+	
+	    $tas_db_info->version_installed = TAS_DB_VERSION;	
+	    update_option('tas_db_info', json_encode($tas_db_info));
+	    wp_schedule_event(time() - 60000, 'hourly', TasForWp::$cron_hook);
+  	}
   }
 
   public static function tas_uninstall()
@@ -458,6 +507,48 @@ EOF;
 
     return $this->formatStatus($status);*/
   }
+  
+  public static function tas_url_to_image() {
+ 		return self::getInstance()->tas_url_to_image_impl();
+  }
+  
+  private function tas_url_to_image_impl() {
+  	$url = $_REQUEST['url'];
+  	$image = urlToImgUrl($url);
+  	if($image->image && $image->url) {  	
+	  	$tweetTemplate = defaultOrThemeSmartyTemplate('tweet-image.tpl');
+	  	$this->smarty->assign('image', $image);  	
+	  	$image->markup = $this->smarty->fetch($tweetTemplate);
+  	}
+  	print strval(jsonGenderBender($image, 'string'));
+  	exit;
+  }
+  
+  public static function tas_search_to_markup() {
+  	return self::getInstance()->tas_search_to_markup_impl();
+  }
+  
+  private function tas_search_to_markup_impl() {  	
+  	// TODO: Check if this should be cached, and do it if necessary.  	
+  	$tweets = $_REQUEST['response'];
+  	$search_id = $_REQUEST['search_id'];
+  	$search_div = $_REQUEST['search_div'];
+  	$limit = $_REQUEST['limit'];
+  	$response = new stdClass();
+  	$response->search_id = $search_id;
+  	$response->search_div = $search_div;
+  	$markups = array();  	
+  	foreach($tweets['results'] as $idx => $tweet) {
+  		// TODO: make this the page size, but cache everything
+  		if($idx > ($limit - 1)) { break; }  		
+  		$status = new TwitterStatus($this->_wpdb);
+  		$status->load_json($tweet);
+  		$markups[] = $this->formatStatus($status);
+  	}
+  	$response->markups = $markups;
+  	print strval(jsonGenderBender($response, 'string'));
+  	exit;
+  }
 
   public static function twitter_search_func($atts)
   {
@@ -536,11 +627,7 @@ EOF;
   private function formatStatus(TwitterStatus $status) {
     $this->smarty->assign('tweet', $status);
 
-    $tweetTemplate = WP_PLUGIN_DIR.'/twitter-api-shortcodes/templates/tweet.tpl';
-    $curTemplateTweet = TEMPLATEPATH.'/tweet.tpl';
-    if(file_exists($curTemplateTweet)) {
-      $tweetTemplate = $curTemplateTweet;
-    }
+  	$tweetTemplate = defaultOrThemeSmartyTemplate('tweet.tpl');
 
     return $this->smarty->fetch($tweetTemplate);
   }
@@ -548,8 +635,12 @@ EOF;
   public function formatSearch(TwitterSearch $search)
   {
     $thisDivGuid = sprintf("tas_search_%s", uniqid());
-    $retVal = sprintf('<div class="tweet-list" id="%s">', $thisDivGuid);
-    $statuses = $search->getStatuses();
+    $statuses = $search->getStatuses();    
+    $searchData = new stdClass();
+    $searchData->id = $search->getId();
+    $searchData->refresh_url = $search->getRefreshUrl();
+    $searchData->limit = $search->limit;
+    $retVal = sprintf('<div class="tweet-list" id="%s" data=\'%s\'>', $thisDivGuid, jsonGenderBender($searchData, 'string'));    
     $max_status_id = $statuses[0]->id_str;
     if (is_array($statuses)) {
       foreach ($statuses as $status) {
@@ -563,10 +654,10 @@ EOF;
       $dataObj->limit = $search->limit;
       $dataObj->div_guid = $thisDivGuid;
       $dataObj->paging = $search->paging;
+      $dataObj->refresh_url = $search->getRefreshUrl();
       $dataJson = jsonGenderBender($dataObj, 'string');
       if($search->older_statuses_available())
       {
-        //$retVal .= "<a href='' class='tas_search_next' data='" . $dataJson ."'>Older Tweets</a>";
         $retVal .= $this->searchNextButton($dataJson);
       }
       if(!$search->archive)
